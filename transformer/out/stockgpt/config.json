@@ -4,7 +4,7 @@
         "work_dir": "./out/stockgpt"
     },
     "data": {
-        "block_size": 128
+        "block_size": 256
     },
     "model": {
         "model_type": "gpt",
@@ -12,7 +12,7 @@
         "n_query_head": 6,
         "n_embd": 192,
         "word_size": 4,
-        "block_size": 128,
+        "block_size": 256,
         "embd_pdrop": 0.1,
         "resid_pdrop": 0.1,
         "attn_pdrop": 0.1,
@@ -25,7 +25,7 @@
         "num_workers": 4,
         "max_iters": 10000,
         "batch_size": 64,
-        "learning_rate": 0.0005,
+        "learning_rate": 5e-06,
         "betas": [
             0.9,
             0.95

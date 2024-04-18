@@ -1,1 +1,1 @@
-/Users/yanjun/code/dev/RownAdob_Trading_Research/transformer/stockgpt.py
+/Users/yanjun/code/dev/CryptoGPT/transformer/cryptogpt.py
