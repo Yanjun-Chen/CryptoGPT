@@ -21,7 +21,7 @@ class Trainer:
         C.num_workers = 4
         # optimizer parameters
         # C.max_iters = 600
-        C.max_iters = 10000
+        C.max_iters = 900
         C.batch_size = 64
         # C.batch_size = 16
         # C.learning_rate = 3e-4
@@ -84,7 +84,7 @@ class Trainer:
             self.val_dataset,
             shuffle=False,
             pin_memory=True,
-            batch_size=config.batch_size,
+            batch_size=min(config.batch_size * 2, len(self.val_dataset)),
             num_workers=config.num_workers,
         )
 
@@ -92,7 +92,7 @@ class Trainer:
             self.test_dataset,
             shuffle=False,
             pin_memory=True,
-            batch_size=config.batch_size,
+            batch_size=min(config.batch_size * 2, len(self.test_dataset)),
             num_workers=config.num_workers,
         )
 
@@ -131,3 +131,5 @@ class Trainer:
             # termination conditions
             if config.max_iters is not None and self.iter_num >= config.max_iters:
                 break
+
+        self.trigger_callbacks('on_epoch_end')

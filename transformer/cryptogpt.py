@@ -98,6 +98,7 @@ if __name__ == '__main__':
     # dataset_name = "BTCUSDT_kline_1h_22_10-24_14"
     dataset_name = "ETHUSDT_kline_1h_22_04-24_04"
     test_set_len = 24 * 5
+    block_size = 128
 
     # get default config and overrides from the command line, if any
     config = get_config()
@@ -109,9 +110,9 @@ if __name__ == '__main__':
     wandb.init(project=wandb_project, name=wandb_run_name, config=config)
 
     data = pd.read_csv(data_path)
-    train_set = data.iloc[:-(3 * test_set_len)]
-    val_set = data.iloc[-(3 * test_set_len): - test_set_len]
-    test_set = data.iloc[- test_set_len:]
+    train_set = data.iloc[:-(3 * test_set_len) + block_size]
+    val_set = data.iloc[-(3 * test_set_len) - block_size: - test_set_len]
+    test_set = data.iloc[- test_set_len - block_size:]
     train_dataset = CryptoDataset(config.data, train_set)
     val_dataset = CryptoDataset(config.data, val_set)
     test_dataset = CryptoDataset(config.data, test_set)
@@ -197,7 +198,36 @@ if __name__ == '__main__':
                 # revert model to training mode
             model.train()
 
+    def epoch_end_callback(trainer):
+        model.eval()
+        with torch.no_grad():
+            eval_iters = len(trainer.test_loader)
+            losses = torch.zeros(eval_iters)
+            r2 = torch.zeros(eval_iters)
+            data_iter = iter(trainer.test_loader)
+            for k in range(eval_iters):
+
+                batch = next(data_iter)
+                batch = [t.to(trainer.device) for t in batch]
+                x, y = batch
+
+                # forward the model
+                logits, loss, _, _, r2_ = model(x, y)
+                losses[k] = loss.item()
+                r2[k] = r2_
+
+            print(f"iter {trainer.iter_num}: Train loss {trainer.loss.item():.5e}; Train R^2 score {trainer.r2}; Test loss {losses.mean():.5e}; Test R^2 score {r2.mean()}")
+
+            # Log metrics to Wandb
+            wandb.log({
+                # "train_loss": trainer.loss.item(),
+                # "train_r2_score": trainer.r2,
+                "test_loss": losses.mean().item(),
+                "test_r2_score": r2.mean()
+            }, step=trainer.iter_num)
+
     trainer.set_callback('on_batch_end', batch_end_callback)
+    trainer.set_callback('on_epoch_end', epoch_end_callback)
 
     # run the optimization
     trainer.run()
